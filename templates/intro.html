@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+    />
+    <title>File Manager App</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      body,
+      html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow-x: hidden;
+      }
+
+      .gradient-bg {
+        background: linear-gradient(to bottom, #42d1b8, #4a8fd2, #8d5fd8);
+      }
+
+      .pulse-animation {
+        animation: pulse 2s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(255, 0, 144, 0.7);
+        }
+
+        70% {
+          transform: scale(1.05);
+          box-shadow: 0 0 0 10px rgba(255, 0, 144, 0);
+        }
+
+        100% {
+          transform: scale(1);
+          box-shadow: 0 0 0 0 rgba(255, 0, 144, 0);
+        }
+      }
+
+      /* Mobile-first design */
+      @media (min-width: 640px) {
+        .mobile-container {
+          max-width: 400px;
+          margin: 0 auto;
+          border-left: 1px solid #ddd;
+          border-right: 1px solid #ddd;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="mobile-container gradient-bg min-h-screen w-full">
+      <div
+        class="flex flex-col items-center justify-center min-h-screen px-6 py-12"
+      >
+        <!-- Image Placeholder - Replace with your actual image -->
+         <!-- Image using your local path -->
+      <div class="mb-5 w-50 h-50 flex items-center justify-center">
+        <img src="{{ url_for('static', filename='images/intro.png') }}" alt="File management icons" class="w-full h-full object-contain">
+      </div>
+
+        <!-- Text Content -->
+        <div class="text-center mb-12">
+          <h1 class="text-white text-2xl font-bold mb-2">
+            Manage your files in a simple way
+          </h1>
+          <p class="text-white text-sm opacity-80">
+            You could integrate your local files with the files in cloud storage
+          </p>
+        </div>
+
+        <!-- Action Button with Error Indicator -->
+        <div class="relative">
+            <a href="{{ url_for('login') }}">
+                <button
+                  class="w-16 h-16 bg-gradient-to-r from-pink-500 to-purple-500 rounded-full flex items-center justify-center pulse-animation focus:outline-none shadow-lg"
+                >
+                  <svg
+                    class="w-8 h-8 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M14 5l7 7m0 0l-7 7m7-7H3"
+                    ></path>
+                  </svg>
+                </button>
+              </a>
+          <!-- Error Indicator -->
+          
+        </div>
+      </div>
+    </div>
+
+   
+  </body>
+</html>

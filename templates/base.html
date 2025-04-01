@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}File Manager{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-300 to-blue-400 h-screen flex flex-col">
+    {% block content %}{% endblock %}
+
+    <!-- Folder Creation Modal (Hidden by Default) -->
+    <div id="folderModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-white rounded-lg p-6 w-80 shadow-lg">
+            <h2 class="text-lg font-semibold mb-2">Create New Folder</h2>
+            <input type="text" id="folderName" class="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-purple-500" placeholder="Enter folder name">
+            <div class="flex justify-end gap-2 mt-4">
+                <button onclick="closeModal()" class="px-4 py-2 bg-gray-400 text-white rounded hover:bg-gray-500">Cancel</button>
+                <button onclick="createFolder()" class="px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">Create</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation Bar -->
+    <div class="fixed bottom-0 left-0 w-full bg-white shadow-lg rounded-t-2xl flex justify-around items-center py-3">
+        <a href="/myfiles" class="text-purple-900 flex flex-col items-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V7M3 7l9-5 9 5M9 21V9M15 21V9"></path>
+            </svg>
+            <span class="text-xs">My Files</span>
+        </a>
+        <button onclick="openModal()" class="bg-purple-900 text-white rounded-full p-4 -mt-10 shadow-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"></path>
+            </svg>
+        </button>
+        <a href="/cloud" class="text-purple-900 flex flex-col items-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M20 16.58A5 5 0 0018 9h-1.26A8 8 0 103 16.58"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16 16l-4-4m0 0l-4 4m4-4v12"></path>
+            </svg>
+            <span class="text-xs">Cloud</span>
+        </a>
+    </div>
+
+    <script>
+        function openModal() {
+            document.getElementById('folderModal').classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('folderModal').classList.add('hidden');
+            document.getElementById('folderName').value = ''; // Clear input
+        }
+
+        function createFolder() {
+            let folderName = document.getElementById('folderName').value.trim();
+            if (!folderName) return;
+
+            fetch('/create-folder', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ folder_name: folderName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert(data.message); // Can be replaced with a better notification
+                closeModal();
+                location.reload(); // Refresh to show the new folder
+            })
+            .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
