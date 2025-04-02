@@ -21,7 +21,7 @@ class User(db.Model, UserMixin):
     def check_password(self, password):
         return check_password_hash(self.password_hash, password)
     
-    # Flask-Login required properties and methods
+ 
     @property
     def is_active(self):
         return True  # All users are active by default
@@ -45,6 +45,8 @@ class Folder(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     subfolders = db.relationship('Folder', backref=db.backref('parent', remote_side=[id]), lazy=True)
 
+    files = db.relationship('File', backref='parent_folder', lazy=True, cascade='all, delete-orphan')
+
 class File(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(255), nullable=False)
@@ -55,6 +57,8 @@ class File(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     uploaded_at = db.Column(db.DateTime, default=datetime.utcnow)
     versions = db.relationship('FileVersion', backref='file', lazy=True)
+
+    folder_id = db.Column(db.Integer, db.ForeignKey('folder.id'), nullable=False)
 
 class FileVersion(db.Model):
     id = db.Column(db.Integer, primary_key=True)

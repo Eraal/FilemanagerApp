@@ -34,6 +34,28 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
+
+@app.route('/myfiles-refresh')
+@login_required
+def myfiles_refresh():
+    folders = db.session.query(
+        Folder,
+        db.func.count(File.id).label('file_count')
+    ).outerjoin(
+        File, Folder.id == File.folder_id
+    ).group_by(
+        Folder.id
+    ).all()
+    
+    folders_with_counts = []
+    for folder, count in folders:
+        folder.file_count = count
+        folders_with_counts.append(folder)
+    
+    return render_template('_folder_list.html', folders=folders_with_counts)
+
+
+
 @app.route('/upload-file', methods=['POST'])
 @login_required
 def upload_file():
@@ -71,10 +93,16 @@ def upload_file():
         )
         db.session.add(new_file)
         db.session.commit()
-        
+
+        # Return the updated folder information
+        folder = Folder.query.get(folder_id)
         return jsonify({
             'message': 'File uploaded successfully',
-            'file_id': new_file.id
+            'folder': {
+                'id': folder.id,
+                'name': folder.name,
+                'file_count': File.query.filter_by(folder_id=folder.id).count()
+            }
         })
     
     return jsonify({'message': 'File type not allowed'}), 400
@@ -84,7 +112,15 @@ def upload_file():
 @login_required
 def get_folders():
     folders = Folder.query.filter_by(user_id=current_user.id).all()
-    return jsonify([{'id': f.id, 'name': f.name} for f in folders])
+    folders_data = []
+    for folder in folders:
+        folders_data.append({
+            'id': folder.id,
+            'name': folder.name,
+            'file_count': File.query.filter_by(folder_id=folder.id).count(),
+            'created_at': folder.created_at.isoformat()
+        })
+    return jsonify(folders_data)
 
 # Rename file
 @app.route('/rename-file/<int:file_id>', methods=['POST'])
@@ -177,8 +213,23 @@ def index():
 @app.route('/myfiles')
 @login_required
 def myfiles():
-    folders = Folder.query.all()  # Fetch folders from the database
-    return render_template('myfile.html', folders=folders)
+    # Fetch folders with their file counts
+    folders = db.session.query(
+        Folder,
+        db.func.count(File.id).label('file_count')
+    ).outerjoin(
+        File, Folder.id == File.folder_id
+    ).group_by(
+        Folder.id
+    ).all()
+    
+    # Convert to list of folder objects with file_count attribute
+    folders_with_counts = []
+    for folder, count in folders:
+        folder.file_count = count
+        folders_with_counts.append(folder)
+    
+    return render_template('myfile.html', folders=folders_with_counts)
 
 @app.route('/create-folder', methods=['POST'])
 def create_folder():
