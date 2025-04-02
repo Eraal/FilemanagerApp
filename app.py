@@ -2,7 +2,8 @@ from flask import Flask, render_template, request, send_from_directory, redirect
 import os
 from models import db, Folder, User, File
 from flask_login import LoginManager, login_user, login_required, logout_user, current_user
-
+from werkzeug.utils import secure_filename
+import mimetypes
 
 
 
@@ -11,6 +12,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:admin@localhost/f
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 app.config['SECRET_KEY'] = 'Rald'
 
+
+# Add allowed extensions
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'pdf', 'doc', 'docx', 'txt'}
 
 # Initialize Flask-Login
 login_manager = LoginManager(app)
@@ -25,6 +29,84 @@ db.init_app(app)
 
 with app.app_context():
     db.create_all()
+############################################ FILES ###################################################
+def allowed_file(filename):
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/upload-file', methods=['POST'])
+@login_required
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file part'}), 400
+        
+    file = request.files['file']
+    folder_id = request.form.get('folder_id')
+    
+    if file.filename == '':
+        return jsonify({'message': 'No selected file'}), 400
+        
+    if not folder_id:
+        return jsonify({'message': 'No folder specified'}), 400
+        
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        file.save(filepath)
+        
+        # Get file size
+        file_size = os.path.getsize(filepath)
+        
+        # Get MIME type
+        mime_type = file.mimetype
+        
+        # Create file record
+        new_file = File(
+            name=filename,
+            file_path=filepath,
+            file_size=file_size,
+            mime_type=mime_type,
+            folder_id=folder_id,
+            user_id=current_user.id
+        )
+        db.session.add(new_file)
+        db.session.commit()
+        
+        return jsonify({
+            'message': 'File uploaded successfully',
+            'file_id': new_file.id
+        })
+    
+    return jsonify({'message': 'File type not allowed'}), 400
+
+# Get all folders for move options
+@app.route('/api/folders')
+@login_required
+def get_folders():
+    folders = Folder.query.filter_by(user_id=current_user.id).all()
+    return jsonify([{'id': f.id, 'name': f.name} for f in folders])
+
+# Rename file
+@app.route('/rename-file/<int:file_id>', methods=['POST'])
+@login_required
+def rename_file(file_id):
+    data = request.get_json()
+    file = File.query.get(file_id)
+    pass
+
+# Move file
+@app.route('/move-file/<int:file_id>', methods=['POST'])
+@login_required
+def move_file(file_id):
+    data = request.get_json()
+    pass
+
+# Delete file
+@app.route('/delete-file/<int:file_id>', methods=['DELETE'])
+@login_required
+def delete_file(file_id):
+    pass
+
 
   ########################  # Routes for registration, login, and logout ################################################################
 @app.route('/register', methods=['GET', 'POST'])
@@ -137,16 +219,10 @@ def folder_files(folder_id):
 @app.route('/api/folders/<int:folder_id>/files', methods=['GET'])
 @login_required
 def get_folder_files(folder_id):
-    # Fetch the folder and its files from the database
-    folder = Folder.query.get(folder_id)
-    if not folder:
-        return jsonify({'error': 'Folder not found'}), 404
-    
-    
-    # Fetch files associated with the folder
+    # Fetch files in this folder
     files = File.query.filter_by(folder_id=folder_id).all()
-
-    # Prepare the response
+    
+    # Prepare response
     files_data = [{
         'id': file.id,
         'name': file.name,
@@ -156,16 +232,61 @@ def get_folder_files(folder_id):
         'uploaded_at': file.uploaded_at.isoformat()
     } for file in files]
 
-    
-
     return jsonify({
-        'folder_id': folder.id,
-        'folder_name': folder.name,
+        'folder_id': folder_id,
+        'folder_name': Folder.query.get(folder_id).name,
         'files': files_data
     })
 
+@app.route('/rename-folder/<int:folder_id>', methods=['POST'])
+@login_required
+def rename_folder(folder_id):
+    data = request.get_json()
+    new_name = data.get('new_name')
     
+    if not new_name:
+        return jsonify({'message': 'New name is required'}), 400
+    
+    folder = Folder.query.get(folder_id)
+    if not folder:
+        return jsonify({'message': 'Folder not found'}), 404
+    
+    if folder.user_id != current_user.id:
+        return jsonify({'message': 'Unauthorized'}), 403
+    
+    try:
+        folder.name = new_name
+        db.session.commit()
+        return jsonify({'message': 'Folder renamed successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error renaming folder', 'error': str(e)}), 500
 
+
+@app.route('/delete-folder/<int:folder_id>', methods=['DELETE'])
+@login_required
+def delete_folder(folder_id):
+    folder = Folder.query.get(folder_id)
+    if not folder:
+        return jsonify({'message': 'Folder not found'}), 404
+    
+    if folder.user_id != current_user.id:
+        return jsonify({'message': 'Unauthorized'}), 403
+    
+    try:
+        # First delete all files in the folder
+        File.query.filter_by(folder_id=folder_id).delete()
+        
+        # Then delete the folder
+        db.session.delete(folder)
+        db.session.commit()
+        return jsonify({'message': 'Folder deleted successfully'})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': 'Error deleting folder', 'error': str(e)}), 500
+
+    
+###############################################################           ###############################################
 
 
 
