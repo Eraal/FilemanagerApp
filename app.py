@@ -339,7 +339,10 @@ def delete_folder(folder_id):
     
 ###############################################################           ###############################################
 
-
+@app.route('/cloud')
+@login_required
+def cloud():
+    return render_template('cloud.html')
 
 
 if __name__ == '__main__':

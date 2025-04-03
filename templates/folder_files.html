@@ -33,8 +33,31 @@ content %}
 
   <!-- Fixed Top Section -->
   <div class="flex-shrink-0">
+    <!-- Back Button -->
+    <div class="p-3 mt-4">
+      <button
+        onclick="window.history.back()"
+        class="flex items-center text-white"
+      >
+        <svg
+          class="w-5 h-5 mr-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          ></path>
+        </svg>
+        Back
+      </button>
+    </div>
+
     <!-- Search Bar -->
-    <div class="p-3 mt-10">
+    <div class="p-3">
       <div class="flex items-center bg-white/90 rounded-full p-2 shadow-md">
         <div class="ml-2 mr-2">
           <svg
@@ -85,16 +108,59 @@ content %}
       <h2 id="folder-name" class="font-bold text-lg truncate max-w-[70%]">
         Loading...
       </h2>
-      <p id="folder-item-count" class="text-sm text-gray-500">Loading...</p>
+      <div class="flex items-center space-x-2">
+        <p id="folder-item-count" class="text-sm text-gray-500">Loading...</p>
+        <!-- View Toggle Buttons -->
+        <button
+          id="listViewBtn"
+          class="p-1 rounded-md bg-blue-100 text-blue-600"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6h16M4 12h16M4 18h16"
+            ></path>
+          </svg>
+        </button>
+        <button
+          id="gridViewBtn"
+          class="p-1 rounded-md text-gray-500 hover:bg-gray-100"
+        >
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+            ></path>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <div id="file-list" class="flex-grow overflow-y-auto pb-20 px-3">
+    <div
+      id="file-list"
+      class="flex-grow overflow-y-auto pb-20 px-3 grid grid-cols-1 gap-3"
+    >
       <!-- File items will be rendered here -->
     </div>
   </div>
 </div>
 
 <!-- File Action Modal -->
+<!-- Keep the EXACT SAME modal code from your original folder_files.html -->
 <div
   id="fileActionModal"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
@@ -283,6 +349,7 @@ content %}
 </div>
 
 <!-- Delete Confirmation Modal -->
+<!-- Keep the EXACT SAME modal code from your original folder_files.html -->
 <div
   id="deleteConfirmModal"
   class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden"
@@ -332,275 +399,315 @@ content %}
 </div>
 
 <script>
-      // Global variables
-      let currentFileId = null;
-      let currentFileName = null;
-      let currentFileData = null;
+  // Global variables
+  let currentFileId = null;
+  let currentFileName = null;
+  let currentFileData = null;
+  let currentViewMode = 'list'; // 'list' or 'grid'
 
-      // Notification functions
-      function showNotification(message, type = 'success') {
-          const notification = document.getElementById('notification');
-          notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center ${type === 'error' ? 'border-l-4 border-red-500' : 'border-l-4 border-green-500'}`;
-          document.getElementById('notification-message').textContent = message;
-          notification.classList.remove('hidden');
+  // View mode functions
+  function toggleViewMode(mode) {
+      currentViewMode = mode;
+      const fileList = document.getElementById('file-list');
 
-          // Auto-hide after 3 seconds
-          setTimeout(hideNotification, 3000);
+      if (mode === 'grid') {
+          fileList.classList.remove('grid-cols-1');
+          fileList.classList.add('grid-cols-2');
+          document.getElementById('gridViewBtn').classList.add('bg-blue-100', 'text-blue-600');
+          document.getElementById('gridViewBtn').classList.remove('text-gray-500', 'hover:bg-gray-100');
+          document.getElementById('listViewBtn').classList.remove('bg-blue-100', 'text-blue-600');
+          document.getElementById('listViewBtn').classList.add('text-gray-500', 'hover:bg-gray-100');
+      } else {
+          fileList.classList.remove('grid-cols-2');
+          fileList.classList.add('grid-cols-1');
+          document.getElementById('listViewBtn').classList.add('bg-blue-100', 'text-blue-600');
+          document.getElementById('listViewBtn').classList.remove('text-gray-500', 'hover:bg-gray-100');
+          document.getElementById('gridViewBtn').classList.remove('bg-blue-100', 'text-blue-600');
+          document.getElementById('gridViewBtn').classList.add('text-gray-500', 'hover:bg-gray-100');
       }
 
-      function hideNotification() {
-          document.getElementById('notification').classList.add('hidden');
+      // Refresh the view if we already have files loaded
+      if (currentFileData) {
+          fetchFolderDetails({{ folder_id }});
+      }
+  }
+
+  // Notification functions
+  function showNotification(message, type = 'success') {
+      const notification = document.getElementById('notification');
+      notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center ${type === 'error' ? 'border-l-4 border-red-500' : 'border-l-4 border-green-500'}`;
+      document.getElementById('notification-message').textContent = message;
+      notification.classList.remove('hidden');
+
+      // Auto-hide after 3 seconds
+      setTimeout(hideNotification, 3000);
+  }
+
+  function hideNotification() {
+      document.getElementById('notification').classList.add('hidden');
+  }
+
+  // File action modal functions
+  function openFileActionModal(fileId, fileName, fileData) {
+      currentFileId = fileId;
+      currentFileName = fileName;
+      currentFileData = fileData;
+
+      // Reset all sections
+      document.getElementById('renameInput').classList.add('hidden');
+      document.getElementById('moveOptions').classList.add('hidden');
+      document.getElementById('fileInfo').classList.add('hidden');
+      document.getElementById('fileActionTitle').textContent = fileName;
+
+      document.getElementById('fileActionModal').classList.remove('hidden');
+  }
+
+  function closeFileActionModal() {
+      document.getElementById('fileActionModal').classList.add('hidden');
+  }
+
+  // Rename functions
+  function showRenameInput() {
+      document.getElementById('renameInput').classList.remove('hidden');
+      document.getElementById('newFileName').value = currentFileName;
+      document.getElementById('newFileName').focus();
+  }
+
+  function cancelRename() {
+      document.getElementById('renameInput').classList.add('hidden');
+  }
+
+  async function renameFile() {
+      const newName = document.getElementById('newFileName').value.trim();
+      if (!newName) {
+          showNotification('Please enter a file name', 'error');
+          return;
       }
 
-      // File action modal functions
-      function openFileActionModal(fileId, fileName, fileData) {
-          currentFileId = fileId;
-          currentFileName = fileName;
-          currentFileData = fileData;
+      try {
+          const response = await fetch(`/rename-file/${currentFileId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ new_name: newName })
+          });
 
-          // Reset all sections
-          document.getElementById('renameInput').classList.add('hidden');
-          document.getElementById('moveOptions').classList.add('hidden');
-          document.getElementById('fileInfo').classList.add('hidden');
-          document.getElementById('fileActionTitle').textContent = fileName;
+          const data = await response.json();
 
-          document.getElementById('fileActionModal').classList.remove('hidden');
-      }
-
-      function closeFileActionModal() {
-          document.getElementById('fileActionModal').classList.add('hidden');
-      }
-
-      // Rename functions
-      function showRenameInput() {
-          document.getElementById('renameInput').classList.remove('hidden');
-          document.getElementById('newFileName').value = currentFileName;
-          document.getElementById('newFileName').focus();
-      }
-
-      function cancelRename() {
-          document.getElementById('renameInput').classList.add('hidden');
-      }
-
-      async function renameFile() {
-          const newName = document.getElementById('newFileName').value.trim();
-          if (!newName) {
-              showNotification('Please enter a file name', 'error');
-              return;
+          if (response.ok) {
+              showNotification('File renamed successfully');
+              closeFileActionModal();
+              fetchFolderDetails({{ folder_id }}); // Refresh file list
+          } else {
+              showNotification(data.message || 'Error renaming file', 'error');
           }
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('An error occurred', 'error');
+      }
+  }
 
-          try {
-              const response = await fetch(`/rename-file/${currentFileId}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ new_name: newName })
-              });
+  // Move functions
+  async function showMoveOptions() {
+      try {
+          // Fetch available folders
+          const response = await fetch('/api/folders');
+          const folders = await response.json();
 
-              const data = await response.json();
+          const select = document.getElementById('targetFolder');
+          select.innerHTML = '<option value="">Select folder</option>';
 
-              if (response.ok) {
-                  showNotification('File renamed successfully');
-                  closeFileActionModal();
-                  fetchFolderDetails({{ folder_id }}); // Refresh file list
-              } else {
-                  showNotification(data.message || 'Error renaming file', 'error');
+          folders.forEach(folder => {
+              if (folder.id != {{ folder_id }}) { // Exclude current folder
+                  const option = document.createElement('option');
+                  option.value = folder.id;
+                  option.textContent = folder.name;
+                  select.appendChild(option);
               }
-          } catch (error) {
-              console.error('Error:', error);
-              showNotification('An error occurred', 'error');
+          });
+
+          document.getElementById('moveOptions').classList.remove('hidden');
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('Failed to load folders', 'error');
+      }
+  }
+
+  function cancelMove() {
+      document.getElementById('moveOptions').classList.add('hidden');
+  }
+
+  async function moveFile() {
+      const targetFolderId = document.getElementById('targetFolder').value;
+      if (!targetFolderId) {
+          showNotification('Please select a folder', 'error');
+          return;
+      }
+
+      try {
+          const response = await fetch(`/move-file/${currentFileId}`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ folder_id: targetFolderId })
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+              showNotification('File moved successfully');
+              closeFileActionModal();
+              fetchFolderDetails({{ folder_id }}); // Refresh file list
+          } else {
+              showNotification(data.message || 'Error moving file', 'error');
           }
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('An error occurred', 'error');
       }
+  }
 
-      // Move functions
-      async function showMoveOptions() {
-          try {
-              // Fetch available folders
-              const response = await fetch('/api/folders');
-              const folders = await response.json();
+  // File info functions
+  function showFileInfo() {
+      document.getElementById('info-name').textContent = currentFileData.name;
+      document.getElementById('info-type').textContent = currentFileData.mime_type;
+      document.getElementById('info-size').textContent = formatFileSize(currentFileData.file_size);
+      document.getElementById('info-date').textContent = new Date(currentFileData.uploaded_at).toLocaleString();
 
-              const select = document.getElementById('targetFolder');
-              select.innerHTML = '<option value="">Select folder</option>';
+      document.getElementById('fileInfo').classList.remove('hidden');
+  }
 
-              folders.forEach(folder => {
-                  if (folder.id != {{ folder_id }}) { // Exclude current folder
-                      const option = document.createElement('option');
-                      option.value = folder.id;
-                      option.textContent = folder.name;
-                      select.appendChild(option);
-                  }
-              });
+  function closeFileInfo() {
+      document.getElementById('fileInfo').classList.add('hidden');
+  }
 
-              document.getElementById('moveOptions').classList.remove('hidden');
-          } catch (error) {
-              console.error('Error:', error);
-              showNotification('Failed to load folders', 'error');
+  // Delete functions
+  function confirmDelete() {
+      document.getElementById('deleteConfirmModal').classList.remove('hidden');
+  }
+
+  function closeDeleteConfirm() {
+      document.getElementById('deleteConfirmModal').classList.add('hidden');
+  }
+
+  async function deleteFile() {
+      try {
+          const response = await fetch(`/delete-file/${currentFileId}`, {
+              method: 'DELETE'
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+              showNotification('File deleted successfully');
+              closeFileActionModal();
+              closeDeleteConfirm();
+              fetchFolderDetails({{ folder_id }}); // Refresh file list
+          } else {
+              showNotification(data.message || 'Error deleting file', 'error');
           }
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('An error occurred', 'error');
       }
+  }
 
-      function cancelMove() {
-          document.getElementById('moveOptions').classList.add('hidden');
-      }
+  // File display functions
+  function formatFileSize(bytes) {
+      if (!bytes) return '0 Bytes';
+      const k = 1024;
+      const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
 
-      async function moveFile() {
-          const targetFolderId = document.getElementById('targetFolder').value;
-          if (!targetFolderId) {
-              showNotification('Please select a folder', 'error');
-              return;
-          }
+  function getFileIcon(mimeType) {
+      const type = mimeType.split('/')[0];
+      const icons = {
+          'image': `<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
+                    </svg>`,
+          'application': `<svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                    </svg>`,
+          'default': `<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
+                    </svg>`
+      };
+      return icons[type] || icons['default'];
+  }
 
-          try {
-              const response = await fetch(`/move-file/${currentFileId}`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ folder_id: targetFolderId })
-              });
-
-              const data = await response.json();
-
-              if (response.ok) {
-                  showNotification('File moved successfully');
-                  closeFileActionModal();
-                  fetchFolderDetails({{ folder_id }}); // Refresh file list
-              } else {
-                  showNotification(data.message || 'Error moving file', 'error');
-              }
-          } catch (error) {
-              console.error('Error:', error);
-              showNotification('An error occurred', 'error');
-          }
-      }
-
-      // File info functions
-      function showFileInfo() {
-          document.getElementById('info-name').textContent = currentFileData.name;
-          document.getElementById('info-type').textContent = currentFileData.mime_type;
-          document.getElementById('info-size').textContent = formatFileSize(currentFileData.file_size);
-          document.getElementById('info-date').textContent = new Date(currentFileData.uploaded_at).toLocaleString();
-
-          document.getElementById('fileInfo').classList.remove('hidden');
-      }
-
-      function closeFileInfo() {
-          document.getElementById('fileInfo').classList.add('hidden');
-      }
-
-      // Delete functions
-      function confirmDelete() {
-          document.getElementById('deleteConfirmModal').classList.remove('hidden');
-      }
-
-      function closeDeleteConfirm() {
-          document.getElementById('deleteConfirmModal').classList.add('hidden');
-      }
-
-      async function deleteFile() {
-          try {
-              const response = await fetch(`/delete-file/${currentFileId}`, {
-                  method: 'DELETE'
-              });
-
-              const data = await response.json();
-
-              if (response.ok) {
-                  showNotification('File deleted successfully');
-                  closeFileActionModal();
-                  closeDeleteConfirm();
-                  fetchFolderDetails({{ folder_id }}); // Refresh file list
-              } else {
-                  showNotification(data.message || 'Error deleting file', 'error');
-              }
-          } catch (error) {
-              console.error('Error:', error);
-              showNotification('An error occurred', 'error');
-          }
-      }
-
-      // File display functions
-      function formatFileSize(bytes) {
-          if (!bytes) return '0 Bytes';
-          const k = 1024;
-          const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-          const i = Math.floor(Math.log(bytes) / Math.log(k));
-          return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-      }
-
-      <!-- And update the file item template in the displayFiles function: -->
   function displayFiles(files) {
       const fileList = document.getElementById('file-list');
       fileList.innerHTML = '';
 
       files.forEach(file => {
           const fileItem = document.createElement('div');
-          fileItem.className = 'bg-white/70 p-3 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow mb-3';
 
-          // Get appropriate icon based on mime type
-          const icon = getFileIcon(file.mime_type);
+          if (currentViewMode === 'grid') {
+              fileItem.className = 'bg-white/70 p-3 rounded-xl flex flex-col items-center shadow-sm hover:shadow-md transition-shadow';
 
-          fileItem.innerHTML = `
-              <div class="flex items-center space-x-3 w-full min-w-0">
-                  <div class="bg-blue-100 p-2 rounded-lg flex-shrink-0">
-                      ${icon}
+              fileItem.innerHTML = `
+                  <div class="bg-blue-100 p-3 rounded-lg mb-2">
+                      ${getFileIcon(file.mime_type)}
                   </div>
-                  <div class="min-w-0 flex-grow">
-                      <p class="font-bold truncate">${file.name}</p>
-                      <p class="text-sm text-gray-500 truncate">${formatFileSize(file.file_size)}</p>
-                  </div>
-                  <button class="file-action-btn text-gray-500 p-1 rounded-full hover:bg-gray-100 flex-shrink-0"
+                  <p class="font-bold text-sm text-center truncate w-full">${file.name}</p>
+                  <p class="text-xs text-gray-500">${formatFileSize(file.file_size)}</p>
+                  <button class="file-action-btn mt-2 text-gray-500 p-1 rounded-full hover:bg-gray-100"
                           onclick="event.stopPropagation(); openFileActionModal(${file.id}, '${file.name.replace(/'/g, "\\'")}', ${JSON.stringify(file).replace(/"/g, '&quot;')})">
-                      <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                      <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                           <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
                       </svg>
                   </button>
-              </div>
-          `;
+              `;
+          } else {
+              fileItem.className = 'bg-white/70 p-3 rounded-xl flex items-center justify-between shadow-sm hover:shadow-md transition-shadow mb-3';
+
+              fileItem.innerHTML = `
+                  <div class="flex items-center space-x-3 w-full min-w-0">
+                      <div class="bg-blue-100 p-2 rounded-lg flex-shrink-0">
+                          ${getFileIcon(file.mime_type)}
+                      </div>
+                      <div class="min-w-0 flex-grow">
+                          <p class="font-bold truncate">${file.name}</p>
+                          <p class="text-sm text-gray-500 truncate">${formatFileSize(file.file_size)}</p>
+                      </div>
+                      <button class="file-action-btn text-gray-500 p-1 rounded-full hover:bg-gray-100 flex-shrink-0"
+                              onclick="event.stopPropagation(); openFileActionModal(${file.id}, '${file.name.replace(/'/g, "\\'")}', ${JSON.stringify(file).replace(/"/g, '&quot;')})">
+                          <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                              <path d="M6 10a2 2 0 11-4 0 2 2 0 014 0zM12 10a2 2 0 11-4 0 2 2 0 014 0zM16 12a2 2 0 100-4 2 2 0 000 4z" />
+                          </svg>
+                      </button>
+                  </div>
+              `;
+          }
+
           fileList.appendChild(fileItem);
       });
   }
 
-    function getFileIcon(mimeType) {
-        const type = mimeType.split('/')[0];
-        const icons = {
-            'image': `<svg class="w-6 h-6 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clip-rule="evenodd"></path>
-                      </svg>`,
-            'application': `<svg class="w-6 h-6 text-yellow-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
-                      </svg>`,
-            'default': `<svg class="w-6 h-6 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd"></path>
-                      </svg>`
-        };
-        return icons[type] || icons['default'];
-    }
+  // Fetch folder details
+  async function fetchFolderDetails(folderId) {
+      try {
+          const response = await fetch(`/api/folders/${folderId}/files`);
+          if (!response.ok) throw new Error('Failed to fetch folder details');
 
-    function formatFileSize(bytes) {
-        if (!bytes) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-      // Fetch folder details
-      async function fetchFolderDetails(folderId) {
-          try {
-              const response = await fetch(`/api/folders/${folderId}/files`);
-              if (!response.ok) throw new Error('Failed to fetch folder details');
-
-              const data = await response.json();
-              document.getElementById('folder-name').textContent = data.folder_name;
-              document.getElementById('folder-item-count').textContent = `${data.files.length} items`;
-              displayFiles(data.files);
-          } catch (error) {
-              console.error('Error:', error);
-              showNotification('Failed to load folder details', 'error');
-          }
+          const data = await response.json();
+          document.getElementById('folder-name').textContent = data.folder_name;
+          document.getElementById('folder-item-count').textContent = `${data.files.length} items`;
+          displayFiles(data.files);
+      } catch (error) {
+          console.error('Error:', error);
+          showNotification('Failed to load folder details', 'error');
       }
+  }
 
-      // Initialize
-      document.addEventListener('DOMContentLoaded', () => {
-          const folderId = {{ folder_id }};
-          if (folderId) fetchFolderDetails(folderId);
-      });
+  // Initialize
+  document.addEventListener('DOMContentLoaded', () => {
+      const folderId = {{ folder_id }};
+      if (folderId) fetchFolderDetails(folderId);
+
+      // Set up view toggle buttons
+      document.getElementById('listViewBtn').addEventListener('click', () => toggleViewMode('list'));
+      document.getElementById('gridViewBtn').addEventListener('click', () => toggleViewMode('grid'));
+  });
 </script>
 {% endblock %}

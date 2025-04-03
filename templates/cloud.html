@@ -1,0 +1,373 @@
+{% extends "base.html" %} {% block title %}My Cloud{% endblock %} {% block
+content %}
+<div
+  class="h-screen flex flex-col bg-gradient-to-br from-purple-300 to-blue-400 overflow-hidden"
+>
+  <!-- Notification Toast (hidden by default) -->
+  <div
+    id="notification"
+    class="fixed top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg z-50 hidden"
+  >
+    <div class="flex items-center">
+      <span id="notification-message" class="font-medium"></span>
+      <button
+        onclick="hideNotification()"
+        class="ml-4 text-gray-500 hover:text-gray-700"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          ></path>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- Cloud Header Section -->
+  <div class="flex-shrink-0 px-4 pt-6">
+    <h1 class="text-2xl font-bold text-black">My Cloud</h1>
+
+    <!-- Cloud Info Container -->
+    <div class="bg-gradient-to-r from-purple-500 to-purple-600 rounded-xl p-4 mt-3 shadow-md text-white">
+      <div class="flex items-center space-x-4">
+        <!-- Cloud Icon -->
+        <div class="bg-blue-100 p-3 rounded-full">
+          <svg
+            class="w-8 h-8 text-blue-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M20 16.58A5 5 0 0018 9h-1.26A8 8 0 103 16.58"
+            ></path>
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M16 16l-4-4m0 0l-4 4m4-4v12"
+            ></path>
+          </svg>
+        </div>
+
+        <div class="flex-1">
+          <div class="flex justify-between items-center">
+            <div>
+              <h2 class="font-bold text-lg">Cloud</h2>
+              <p class="text-sm text-gray-600">0.000 Files</p>
+            </div>
+            <div class="flex items-center">
+              <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+              <span class="text-sm text-green-600 font-medium"
+                >Sync Active</span
+              >
+            </div>
+          </div>
+
+          <!-- Storage Usage Bar -->
+          <div class="mt-2">
+            <div class="w-full bg-gray-200 rounded-full h-2">
+              <div
+                class="bg-blue-600 h-2 rounded-full"
+                style="width: 25%"
+              ></div>
+            </div>
+           
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Subscription Container -->
+    <div class="bg-white/90 rounded-xl p-4 mt-3 shadow-md">
+      <div class="flex justify-between items-center">
+        <div>
+          <h3 class="font-bold">Unlimited Storage</h3>
+          <p class="text-sm text-gray-600">Php 150/monthly</p>
+        </div>
+        <button
+          class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+        >
+          Upgrade
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- View Toggle Buttons -->
+  <div class="px-4 pt-4 flex justify-end space-x-2">
+    <button id="listViewBtn" class="p-2 rounded-md bg-blue-100 text-blue-600">
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6h16M4 12h16M4 18h16"
+        ></path>
+      </svg>
+    </button>
+    <button
+      id="gridViewBtn"
+      class="p-2 rounded-md text-gray-500 hover:bg-gray-100"
+    >
+      <svg
+        class="w-5 h-5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+        ></path>
+      </svg>
+    </button>
+  </div>
+
+  <!-- Folders Section -->
+  <div
+    class="flex-grow bg-white/70 rounded-t-3xl mt-2 flex flex-col overflow-y-auto"
+  >
+    <div class="flex-shrink-0 px-4 pt-4 pb-2">
+      <h2 class="font-bold text-lg">Folders</h2>
+    </div>
+
+    <div id="folderContainer" class="pb-20 px-3 grid grid-cols-2 gap-3">
+      <!-- Documents Folder -->
+      <div
+        class="bg-white/90 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+      >
+        <div class="bg-blue-100 p-3 rounded-full mb-2">
+          <svg
+            class="w-6 h-6 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="font-bold text-center">Documents</h3>
+        <p class="text-sm text-gray-500">12 items</p>
+      </div>
+
+      <!-- Videos Folder -->
+      <div
+        class="bg-white/90 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+      >
+        <div class="bg-blue-100 p-3 rounded-full mb-2">
+          <svg
+            class="w-6 h-6 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v4H7V5zm8 8v2h1v-2h-1zm-2-8h1V5h-1v2zm1 4h-1v2h1v-2zm-2 0h-1v2h1v-2zm-2-4h1V5h-1v2zm-1 0h-1v2h1V5zm-1 4h1v2H9v-2zm-1 0h-1v2h1v-2zm8 4h-3v2h3v-2z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="font-bold text-center">Videos</h3>
+        <p class="text-sm text-gray-500">507 items</p>
+      </div>
+
+      <!-- Photos Folder -->
+      <div
+        class="bg-white/90 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+      >
+        <div class="bg-blue-100 p-3 rounded-full mb-2">
+          <svg
+            class="w-6 h-6 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="font-bold text-center">Photos</h3>
+        <p class="text-sm text-gray-500">5,789 items</p>
+      </div>
+
+      <!-- Downloads Folder -->
+      <div
+        class="bg-white/90 p-4 rounded-xl shadow-sm hover:shadow-md transition-shadow flex flex-col items-center"
+      >
+        <div class="bg-blue-100 p-3 rounded-full mb-2">
+          <svg
+            class="w-6 h-6 text-blue-600"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fill-rule="evenodd"
+              d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+              clip-rule="evenodd"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="font-bold text-center">Downloads</h3>
+        <p class="text-sm text-gray-500">267 items</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  // Notification functions
+  function showNotification(message, type = "success") {
+    const notification = document.getElementById("notification");
+    notification.className = `fixed top-4 left-1/2 transform -translate-x-1/2 bg-white px-6 py-3 rounded-lg shadow-lg z-50 flex items-center ${
+      type === "error"
+        ? "border-l-4 border-red-500"
+        : "border-l-4 border-green-500"
+    }`;
+    document.getElementById("notification-message").textContent = message;
+    notification.classList.remove("hidden");
+
+    // Auto-hide after 3 seconds
+    setTimeout(hideNotification, 3000);
+  }
+
+  function hideNotification() {
+    document.getElementById("notification").classList.add("hidden");
+  }
+
+  // View toggle functionality
+  let currentView = "grid"; // Default to grid view
+
+  document.getElementById("listViewBtn").addEventListener("click", () => {
+    if (currentView !== "list") {
+      document
+        .getElementById("folderContainer")
+        .classList.remove("grid-cols-2");
+      document.getElementById("folderContainer").classList.add("grid-cols-1");
+      document
+        .getElementById("listViewBtn")
+        .classList.add("bg-blue-100", "text-blue-600");
+      document
+        .getElementById("listViewBtn")
+        .classList.remove("text-gray-500", "hover:bg-gray-100");
+      document
+        .getElementById("gridViewBtn")
+        .classList.remove("bg-blue-100", "text-blue-600");
+      document
+        .getElementById("gridViewBtn")
+        .classList.add("text-gray-500", "hover:bg-gray-100");
+      currentView = "list";
+
+      // Convert folder items to list view
+      const folders = document.querySelectorAll("#folderContainer > div");
+      folders.forEach((folder) => {
+        folder.classList.remove("flex-col", "items-center", "p-4");
+        folder.classList.add("flex-row", "p-3", "items-center");
+
+        const icon = folder.querySelector("div:first-child");
+        icon.classList.remove("p-3", "rounded-full", "mb-2");
+        icon.classList.add("p-2", "rounded-lg", "mr-3");
+
+        const textDiv = document.createElement("div");
+        textDiv.className = "min-w-0 flex-grow";
+        textDiv.innerHTML = `
+              <p class="font-bold truncate">${
+                folder.querySelector("h3").textContent
+              }</p>
+              <p class="text-sm text-gray-500 truncate">${
+                folder.querySelector("p").textContent
+              }</p>
+            `;
+
+        // Replace current content with list view layout
+        folder.innerHTML = "";
+        folder.appendChild(icon);
+        folder.appendChild(textDiv);
+
+        // Add action button
+        const actionBtn = document.createElement("button");
+        actionBtn.className =
+          "text-gray-500 p-1 rounded-full hover:bg-gray-100 flex-shrink-0";
+        actionBtn.innerHTML = `
+              <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
+              </svg>
+            `;
+        folder.appendChild(actionBtn);
+      });
+    }
+  });
+
+  document.getElementById("gridViewBtn").addEventListener("click", () => {
+    if (currentView !== "grid") {
+      document
+        .getElementById("folderContainer")
+        .classList.remove("grid-cols-1");
+      document.getElementById("folderContainer").classList.add("grid-cols-2");
+      document
+        .getElementById("gridViewBtn")
+        .classList.add("bg-blue-100", "text-blue-600");
+      document
+        .getElementById("gridViewBtn")
+        .classList.remove("text-gray-500", "hover:bg-gray-100");
+      document
+        .getElementById("listViewBtn")
+        .classList.remove("bg-blue-100", "text-blue-600");
+      document
+        .getElementById("listViewBtn")
+        .classList.add("text-gray-500", "hover:bg-gray-100");
+      currentView = "grid";
+
+      // Convert folder items back to grid view
+      const folders = document.querySelectorAll("#folderContainer > div");
+      folders.forEach((folder) => {
+        folder.classList.remove("flex-row", "p-3", "items-center");
+        folder.classList.add("flex-col", "items-center", "p-4");
+
+        const icon = folder.querySelector("div:first-child");
+        icon.classList.remove("p-2", "rounded-lg", "mr-3");
+        icon.classList.add("p-3", "rounded-full", "mb-2");
+
+        // Get folder name and item count from list view
+        const folderName = folder.querySelector(".font-bold").textContent;
+        const itemCount = folder.querySelector(".text-sm").textContent;
+
+        // Replace current content with grid view layout
+        folder.innerHTML = `
+              <div class="bg-blue-100 p-3 rounded-full mb-2">
+                ${icon.innerHTML}
+              </div>
+              <h3 class="font-bold text-center">${folderName}</h3>
+              <p class="text-sm text-gray-500">${itemCount}</p>
+            `;
+      });
+    }
+  });
+
+  // Initialize with grid view active
+  document.getElementById("gridViewBtn").click();
+</script>
+{% endblock %}
